@@ -4,7 +4,7 @@ const {
   handlers, 
   openai
 } = Echo({
-    appId: "d1fa4f41-6bd3-4e00-8d6e-46212713ffdc"
+    appId: process.env.ECHO_APP_ID!
 });
 
 export { handlers, openai };
