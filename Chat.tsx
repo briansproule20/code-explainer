@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -131,11 +132,26 @@ export default function Chat() {
                     ? 'bg-green-600 text-white shadow-sm' 
                     : 'bg-gray-100 text-gray-900 border border-gray-200 shadow-sm'
                 }`}>
-                  {message.role === 'user' ? (
-                    <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">{message.content}</pre>
-                  ) : (
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
-                  )}
+                  <div className="text-sm prose prose-sm max-w-none">
+                    {message.role === 'assistant' ? (
+                      <ReactMarkdown
+                        components={{
+                          ul: ({ children }) => <ul className="list-disc pl-4 space-y-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1">{children}</ol>,
+                          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                          em: ({ children }) => <em className="italic">{children}</em>,
+                          code: ({ children }) => <code className="bg-gray-200 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                          pre: ({ children }) => <pre className="bg-gray-200 p-2 rounded-md overflow-x-auto font-mono text-xs">{children}</pre>,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    ) : (
+                      <pre className="whitespace-pre-wrap font-mono leading-relaxed">{message.content}</pre>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

@@ -7,7 +7,7 @@ export async function POST(req: Request) {
         const { messages } = await req.json();
         console.log("Received messages:", messages);
 
-        const systemPrompt = "You are a helpful coding assistant. Explain code snippets in plain English, making them easy to understand for developers of all levels. Break down complex concepts into simple terms and provide clear explanations of what the code does.";
+        const systemPrompt = "You are a helpful coding assistant. Explain code snippets in plain English, making them easy to understand for developers of all levels, especially beginners. Break down complex concepts into simple terms and provide clear explanations of what the code does. Keep your responses concise and to the point where possible.";
 
         const allMessages = [
             { role: "system", content: systemPrompt },
