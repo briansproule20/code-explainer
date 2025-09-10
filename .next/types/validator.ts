@@ -65,6 +65,24 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies RouteHandlerConfig<"/api/echo/[...echo]">
 }
 
+// Validate ../../app/api/echo/check-auth/route.ts
+{
+  const handler = {} as typeof import("../../app/api/echo/check-auth/route.js")
+  handler satisfies RouteHandlerConfig<"/api/echo/check-auth">
+}
+
+// Validate ../../app/api/echo/session/route.ts
+{
+  const handler = {} as typeof import("../../app/api/echo/session/route.js")
+  handler satisfies RouteHandlerConfig<"/api/echo/session">
+}
+
+// Validate ../../app/api/echo/user/route.ts
+{
+  const handler = {} as typeof import("../../app/api/echo/user/route.js")
+  handler satisfies RouteHandlerConfig<"/api/echo/user">
+}
+
 
 
 
