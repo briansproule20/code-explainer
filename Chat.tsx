@@ -1,11 +1,112 @@
 "use client";
 
-import { useState } from "react";
-import { useChat } from "@ai-sdk/react";
+import { useState, useEffect, useRef } from "react";
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  id: string;
+}
 
 export default function Chat() {
   const [input, setInput] = useState("");
-  const { messages, sendMessage } = useChat();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change or when typing
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping, streamingContent]);
+
+  const TypingIndicator = () => (
+    <div className="flex justify-start">
+      <div className="max-w-3xl px-4 py-3 rounded-2xl bg-gray-100 text-gray-900 border border-gray-200 shadow-sm">
+        <div className="flex items-center space-x-1">
+          <div className="flex space-x-1">
+            <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+            <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+            <div className="w-2 h-2 bg-green-600 rounded-full animate-bounce"></div>
+          </div>
+          <span className="text-sm text-gray-700 ml-2">AI is thinking...</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+    
+    const userMessage: Message = {
+      role: 'user',
+      content: input,
+      id: Date.now().toString()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+    setIsTyping(true);
+    const currentInput = input;
+    setInput("");
+    
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, userMessage]
+        })
+      });
+      
+      if (response.ok) {
+        setIsTyping(false);
+        const data = await response.text();
+        
+        // Simulate streaming effect by showing content gradually
+        const words = data.split(' ');
+        let displayedContent = '';
+        setStreamingContent('');
+        
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: '',
+          id: (Date.now() + 1).toString()
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+        
+        for (let i = 0; i < words.length; i++) {
+          displayedContent += (i > 0 ? ' ' : '') + words[i];
+          setStreamingContent(displayedContent);
+          setMessages(prev => prev.map(msg => 
+            msg.id === assistantMessage.id 
+              ? { ...msg, content: displayedContent }
+              : msg
+          ));
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        setStreamingContent('');
+      } else {
+        setIsTyping(false);
+        const errorText = await response.text();
+        throw new Error(`API call failed: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      setIsTyping(false);
+      setStreamingContent('');
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Sorry, something went wrong. Please try again.',
+        id: (Date.now() + 1).toString()
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-[600px]">
@@ -22,18 +123,26 @@ export default function Chat() {
             <p className="text-gray-500">Paste any code snippet below and get a clear, plain-English explanation.</p>
           </div>
         ) : (
-          messages.map((message, index) => (
-            <div key={message.id || index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-3xl px-4 py-3 rounded-2xl ${
-                message.role === 'user' 
-                  ? 'bg-green-500 text-black' 
-                  : 'bg-green-900/30 text-green-400 border border-green-500/30'
-              }`}>
-                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">{message.content}</pre>
+          <>
+            {messages.map((message, index) => (
+              <div key={message.id || index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-3xl px-4 py-3 rounded-2xl ${
+                  message.role === 'user' 
+                    ? 'bg-green-600 text-white shadow-sm' 
+                    : 'bg-gray-100 text-gray-900 border border-gray-200 shadow-sm'
+                }`}>
+                  {message.role === 'user' ? (
+                    <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">{message.content}</pre>
+                  ) : (
+                    <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+            {isTyping && <TypingIndicator />}
+          </>
         )}
+        <div ref={messagesEndRef} />
       </div>
       
       {/* Input */}
@@ -50,25 +159,17 @@ export default function Chat() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault();
-                  if (input.trim()) {
-                    sendMessage({ text: input });
-                    setInput("");
-                  }
+                  sendMessage();
                 }
               }}
             />
           </div>
           <button
-            onClick={() => {
-              if (input.trim()) {
-                sendMessage({ text: input });
-                setInput("");
-              }
-            }}
-            disabled={!input.trim()}
+            onClick={sendMessage}
+            disabled={!input.trim() || isLoading}
             className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-400 hover:from-green-600 hover:to-green-500 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-2"
           >
-            <span>Explain</span>
+            <span>{isLoading ? 'Explaining...' : 'Explain'}</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
