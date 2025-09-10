@@ -6,8 +6,8 @@ import { useState, useEffect } from "react";
 export default function Home() {
     const [isSignedIn, setIsSignedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [user, setUser] = useState(null);
-    const [balance, setBalance] = useState(null);
+    const [user, setUser] = useState<any>(null);
+    const [balance, setBalance] = useState<number | null>(null);
     const echoClient = useEcho();
 
     useEffect(() => {
