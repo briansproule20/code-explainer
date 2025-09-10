@@ -89,9 +89,9 @@ export default function Home() {
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Credit Balance */}
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
+              <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm font-medium text-green-700">
                   {balance !== null ? `$${balance.toFixed(2)}` : 'Loading...'}
@@ -114,9 +114,10 @@ export default function Home() {
               {/* Logout Button */}
               <button
                 onClick={() => signOut()}
-                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded-md border border-gray-300 hover:border-gray-400 transition-colors"
+                className="text-sm text-gray-500 hover:text-gray-700 px-2 sm:px-3 py-1 rounded-md border border-gray-300 hover:border-gray-400 transition-colors"
               >
-                Sign Out
+                <span className="hidden sm:inline">Sign Out</span>
+                <span className="sm:hidden">Out</span>
               </button>
             </div>
           </div>
